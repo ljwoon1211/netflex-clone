@@ -8,6 +8,7 @@ import { createGlobalStyle, ThemeProvider } from "styled-components";
 import { theme } from "./styles/theme";
 import { RouterProvider } from "react-router-dom";
 import router from "./Router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const GlobalStyle = createGlobalStyle`
 @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400&display=swap');
@@ -64,9 +65,10 @@ table {
 body {
   font-weight: 300;
   font-family: 'Source Sans Pro', sans-serif;
-  color:black;
+  color:${(props) => props.theme.white.darker};
   line-height: 1.2;
-  background:linear-gradient(135deg,#e09,#d0e);
+  background-color:black;
+  overflow-x:hidden
 }
 a {
   text-decoration:none;
@@ -74,19 +76,23 @@ a {
 }
 `;
 
+const queryClient = new QueryClient();
+
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Failed to find the root element");
 const root = ReactDOM.createRoot(rootElement);
 
 root.render(
-    <React.StrictMode>
-        <RecoilRoot>
-            <ThemeProvider theme={theme}>
-                <GlobalStyle />
-                <RouterProvider router={router} />
-            </ThemeProvider>
-        </RecoilRoot>
-    </React.StrictMode>,
+  <React.StrictMode>
+    <RecoilRoot>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider theme={theme}>
+          <GlobalStyle />
+          <RouterProvider router={router} />
+        </ThemeProvider>
+      </QueryClientProvider>
+    </RecoilRoot>
+  </React.StrictMode>,
 );
 
 // If you want to start measuring performance in your app, pass a function
