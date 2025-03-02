@@ -1,0 +1,23 @@
+{
+  "files": {
+    "main.css": "/netflex-clone/static/css/main.e6c13ad2.css",
+    "main.js": "/netflex-clone/static/js/main.3177206a.js",
+    "static/js/453.f44e2243.chunk.js": "/netflex-clone/static/js/453.f44e2243.chunk.js",
+    "static/js/633.30971270.chunk.js": "/netflex-clone/static/js/633.30971270.chunk.js",
+    "static/js/628.8ef1f20e.chunk.js": "/netflex-clone/static/js/628.8ef1f20e.chunk.js",
+    "static/js/201.cadac973.chunk.js": "/netflex-clone/static/js/201.cadac973.chunk.js",
+    "static/js/488.ebabdee4.chunk.js": "/netflex-clone/static/js/488.ebabdee4.chunk.js",
+    "index.html": "/netflex-clone/index.html",
+    "main.e6c13ad2.css.map": "/netflex-clone/static/css/main.e6c13ad2.css.map",
+    "main.3177206a.js.map": "/netflex-clone/static/js/main.3177206a.js.map",
+    "453.f44e2243.chunk.js.map": "/netflex-clone/static/js/453.f44e2243.chunk.js.map",
+    "633.30971270.chunk.js.map": "/netflex-clone/static/js/633.30971270.chunk.js.map",
+    "628.8ef1f20e.chunk.js.map": "/netflex-clone/static/js/628.8ef1f20e.chunk.js.map",
+    "201.cadac973.chunk.js.map": "/netflex-clone/static/js/201.cadac973.chunk.js.map",
+    "488.ebabdee4.chunk.js.map": "/netflex-clone/static/js/488.ebabdee4.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e6c13ad2.css",
+    "static/js/main.3177206a.js"
+  ]
+}
