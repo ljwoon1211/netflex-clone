@@ -20,7 +20,15 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "tv",
+        path: "tvs",
+        element: (
+          <Suspense fallback={<div>Loading...</div>}>
+            <Tv />
+          </Suspense>
+        ),
+      },
+      {
+        path: "tvs/:tvId",
         element: (
           <Suspense fallback={<div>Loading...</div>}>
             <Tv />
@@ -32,6 +40,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<div>Loading...</div>}>
             <Search />
+          </Suspense>
+        ),
+      },
+      {
+        path: "movies/:movieId",
+        element: (
+          <Suspense fallback={<div>Loading...</div>}>
+            <Home />
           </Suspense>
         ),
       },

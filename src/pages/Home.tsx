@@ -1,9 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import React, { useState } from "react";
-import { getMovies, IGetMoviesResult } from "../services/movieService";
+import { getLatestMovies } from "../services/movieService";
 import styled from "styled-components";
 import { makeImagePath } from "../utils/utils";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
+import { PathMatch, useMatch, useNavigate } from "react-router-dom";
+import MovieSlider from "../components/MovieSlider";
+import { IGetMoviesResult } from "../types/movieTypes";
+import useGetMoviesData from "../hooks/useGetMoviesData";
 
 const Wrapper = styled.div`
   background: black;
@@ -16,17 +20,34 @@ const Loader = styled.div`
   align-items: center;
 `;
 
-const Banner = styled.div<{ bgPhoto: string }>`
+const Banner = styled.div<{ $bgPhoto: string }>`
   height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-end;
+  /* padding: 60px; */
+
   // 이렇게 하면 위쪽은 밝고, 아래쪽이 어두운 이미지 형태 백그라운드 만들기 가능
   background-image: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 1)),
-    url(${(props) => props.bgPhoto});
+    url(${(props) => props.$bgPhoto});
   background-size: cover;
 `;
 
+const SliderWrapper = styled.div`
+  /* position: relative; */
+  padding: 20px 0;
+  padding-top: 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const ContentWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  background-color: black;
+  gap: 20px;
+`;
 const Title = styled.h2`
   font-size: 68px;
   margin-bottom: 20px;
@@ -36,145 +57,120 @@ const OverView = styled.p`
   width: 50%;
 `;
 
-const Slider = styled.div`
-  position: relative;
-  top: -200px;
-`;
-const Row = styled(motion.div)`
-  display: grid;
-  gap: 10px;
-  margin-bottom: 5px;
-  grid-template-columns: repeat(6, 1fr);
-  position: absolute;
+const Overlay = styled(motion.div)`
+  position: fixed;
+  top: 0;
   width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
 `;
-const Box = styled(motion.div)<{ bgPhoto: string }>`
-  background-image: url(${(props) => props.bgPhoto});
-  background-color: white;
-  height: 200px;
-  color: white;
-  font-size: 66px;
+
+const BigMovie = styled(motion.div)<{ $scrollY: number }>`
+  position: absolute;
+  width: 40vw;
+  height: 80vh;
+  top: ${(props) => props.$scrollY + 100}px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  background-color: ${(props) => props.theme.black.lighter};
+  border-radius: 15px;
+  overflow: hidden;
+`;
+
+const BigCover = styled.div`
+  width: 100%;
   background-size: cover;
   background-position: center center;
-  /* position: relative; */
-  &:first-child {
-    transform-origin: center left;
-  }
-  &:last-child {
-    transform-origin: center right;
-  }
+  height: 400px;
+`;
+const BigTitle = styled.h3`
+  color: ${(props) => props.theme.white.lighter};
+  padding: 20px;
+  font-size: 46px;
+  position: relative;
+  top: -80px;
 `;
 
-const Info = styled(motion.div)`
-  padding: 10px;
-  background-color: ${(props) => props.theme.black.lighter};
-  opacity: 0;
-  position: absolute;
-  width: 100%;
-  bottom: 0;
-  h4 {
-    text-align: center;
-    font-size: 18px;
-  }
+const BigOverview = styled.p`
+  padding: 20px;
+  position: relative;
+  top: -80px;
+  color: ${(props) => props.theme.white.lighter};
 `;
 
-const rowVariants = {
-  hidden: { x: window.outerWidth + 5 },
-  visible: { x: 0 },
-  exit: { x: -window.outerWidth - 5 },
-};
-const boxVariants = {
-  normal: {
-    scale: 1,
-  },
-  hover: {
-    scale: 1.3,
-    y: -80,
-    transition: {
-      delay: 0.5,
-      duration: 0.1,
-      type: "tween",
-    },
-  },
-};
-
-const infoVariants = {
-  hover: {
-    opacity: 1,
-    transition: {
-      delay: 0.5,
-      duration: 0.1,
-      type: "tween",
-    },
-  },
-};
+const Subtitle = styled.h6`
+  font-size: 40px;
+  color: ${(props) => props.theme.white.lighter};
+`;
 
 export default function Home() {
-  const { data, isFetching } = useQuery({
-    queryKey: ["movies", "nowPlaying"],
-    queryFn: async (): Promise<IGetMoviesResult> => getMovies(),
-  });
+  const navigate = useNavigate();
+  const moviePathMatch: PathMatch<string> | null = useMatch("/movies/:id");
 
-  const [index, setIndex] = useState(0);
-  const [leaving, setLeaving] = useState<Boolean>(false);
+  const {
+    latestMovies,
+    topRatedMovies,
+    upcomingMovies,
+    isFetchingLatest,
+    isFetchingTopRated,
+    isFetchingUpcoming,
+  } = useGetMoviesData();
 
-  const increaseIndex = () => {
-    if (!data) return;
-    if (leaving) return;
-    toggleLeaving();
-    const totalMovies = data.results.length;
-    const maxIndex = Math.ceil(totalMovies / offset);
-    setIndex((prev) => (prev === maxIndex ? 0 : prev + 1));
-  };
+  const { scrollY } = useScroll();
 
-  const toggleLeaving = () => setLeaving((prev) => !prev);
+  const onOverlayClick = () => navigate(`/`);
+  const clickedMovie =
+    moviePathMatch?.params.id &&
+    [latestMovies, topRatedMovies, upcomingMovies]
+      .flatMap((data) => data?.results || [])
+      .find((movie) => String(movie.id) === moviePathMatch.params.id);
 
-  const offset = 6; // 페이지네이션 수
   return (
     <Wrapper>
-      {isFetching ? (
+      {isFetchingLatest || isFetchingTopRated || isFetchingUpcoming ? (
         <Loader> Loading...</Loader>
       ) : (
         <>
-          <Banner
-            onClick={increaseIndex}
-            bgPhoto={makeImagePath(data?.results[0].backdrop_path || "")}
-          >
-            <Title>{data?.results[0].title}</Title>
-            <OverView>{data?.results[0].overview}</OverView>
+          <Banner $bgPhoto={makeImagePath(latestMovies?.results[0].backdrop_path || "")}>
+            <Title>{latestMovies?.results[0].title}</Title>
+            <OverView>{latestMovies?.results[0].overview}</OverView>
+            <SliderWrapper>
+              <Subtitle>Latest movies</Subtitle>
+              <MovieSlider data={latestMovies} />
+            </SliderWrapper>
           </Banner>
-          <Slider>
-            <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
-              <Row
-                variants={rowVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ type: "tween", duration: "1" }}
-                key={index}
-              >
-                {/* key값이 바뀔때마다 Row가 새로 렌더링 */}
-                {data?.results
-                  .slice(1)
-                  // offset 6개 , index 현재 페이지네이션
-                  .slice(offset * index, offset * index + offset)
-                  .map((movie) => (
-                    <Box
-                      key={movie.id}
-                      variants={boxVariants}
-                      whileHover="hover"
-                      initial="normal"
-                      transition={{ type: "tween" }}
-                      bgPhoto={makeImagePath(movie.backdrop_path, "w500")}
-                    >
-                      <Info variants={infoVariants}>
-                        <h4>{movie.title}</h4>
-                      </Info>
-                    </Box>
-                  ))}
-              </Row>
-            </AnimatePresence>
-          </Slider>
+          <ContentWrapper>
+            <Subtitle>Top Rated movies</Subtitle>
+            <MovieSlider data={topRatedMovies} />
+            <Subtitle>Upcoming movies</Subtitle>
+            <MovieSlider data={upcomingMovies} />
+          </ContentWrapper>
+
+          <AnimatePresence>
+            {moviePathMatch ? (
+              <>
+                <Overlay onClick={onOverlayClick} exit={{ opacity: 0 }} animate={{ opacity: 1 }} />
+                <BigMovie layoutId={moviePathMatch.params.id} $scrollY={scrollY.get()}>
+                  {clickedMovie && (
+                    <>
+                      <BigCover
+                        style={{
+                          backgroundImage: `linear-gradient(to top, black, transparent), url(${makeImagePath(
+                            clickedMovie.backdrop_path,
+                            "w500",
+                          )})`,
+                        }}
+                      />
+                      <BigTitle>{clickedMovie.title}</BigTitle>
+                      <BigOverview>{clickedMovie.overview}</BigOverview>
+                    </>
+                  )}
+                </BigMovie>
+              </>
+            ) : null}
+          </AnimatePresence>
         </>
       )}
     </Wrapper>
